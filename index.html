@@ -253,6 +253,23 @@
         <span id="toast-msg">Mensagem</span>
     </div>
 
+    <!-- Modal de Senha -->
+    <div id="password-modal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 bg-slate-950/80 backdrop-blur-sm">
+        <div id="password-modal-content" class="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-2xl transform scale-95 transition-transform duration-300 w-full max-w-sm">
+            <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <i class="ph-fill ph-lock-key text-brand-400"></i> Autenticação Necessária
+            </h3>
+            <p class="text-sm text-slate-400 mb-4">Digite a senha de administrador para salvar as alterações da escala.</p>
+            
+            <input type="password" id="admin-password" placeholder="Digite a senha..." class="w-full bg-slate-950 border border-slate-700 rounded-lg py-3 px-4 font-semibold text-slate-200 focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-inner mb-4" onkeypress="if(event.key === 'Enter') confirmPassword()">
+            
+            <div class="flex justify-end gap-3">
+                <button onclick="closePasswordModal()" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">Cancelar</button>
+                <button onclick="confirmPassword()" class="px-4 py-2 rounded-lg text-sm font-bold text-white bg-brand-600 hover:bg-brand-500 transition-colors shadow-lg shadow-brand-500/20">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const sectorsData = {
             "Operadores de Supermercado": ["JACIENE MEDEIROS DOS SANTOS", "TAMIRES LEAL RAMOS", "KESSIA LUANA SANTOS FIGUEREDO", "SOFIA GOMES DE OLIVEIRA", "MARISTELLA FERNANDA ALVES MELO", "PEDRO HENRIQUE MARQUES ANDRADE", "LYDIA LUIZA ARAUJO PEREIRA", "ELAINE ALVES SANTOS DA SILVA", "ISABELA DOS REIS CARVALHO", "FABIANA DA SILVA BATISTA"],
