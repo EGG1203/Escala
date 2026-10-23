@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel 5x2 - Dona Hortifruti</title>
+    <!-- Ícone da Aba do Navegador -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>">
     
     <!-- Tailwind CSS -->
@@ -253,7 +254,6 @@
     </div>
 
     <script>
-        // Dados de setores integrados e prontos para diversidade de horários
         const sectorsData = {
             "Operadores de Supermercado": ["JACIENE MEDEIROS DOS SANTOS", "TAMIRES LEAL RAMOS", "KESSIA LUANA SANTOS FIGUEREDO", "SOFIA GOMES DE OLIVEIRA", "MARISTELLA FERNANDA ALVES MELO", "PEDRO HENRIQUE MARQUES ANDRADE", "LYDIA LUIZA ARAUJO PEREIRA", "ELAINE ALVES SANTOS DA SILVA", "ISABELA DOS REIS CARVALHO", "FABIANA DA SILVA BATISTA"],
             "Atendente de Cadastro": ["CYNTHIA LUANA XAVIER DA SILVA"],
@@ -265,7 +265,7 @@
             "Padaria": ["RAQUEL SILVA DE OLIVEIRA", "ALLAN DE SOUSA SANTOS", "CYNTHIA HELENA ARIUTE", "ANA LAURA DOS SANTOS RODRIGUES", "VITOR GABRIEL GALVAO SILVA"],
             "Pizzaria": ["ALESSA DA SILVA", "LUCIANA CRISTINA VIEIRA", "JOYCY KELLY NASCIMENTO DA CRUZ"],
             "P.A.S": ["CARLENE FERREIRA", "WEVERTON RIBEIRO DOS SANTOS", "FELIX JOTHAN SOARES SANTANA", "ELMA DO CARMO RIBEIRO"],
-            "Sushi": ["DIEGO NERY PEREIRA", "WALAFE HENRIQUE DE SOUSA PIMENTA", "VICTOR GUSTAVO DE LIMA CARVALHO", "CARLOS EDUARDO FURTADO SOUSA"],
+            "FLV": ["DIEGO NERY PEREIRA", "WALAFE HENRIQUE DE SOUSA PIMENTA", "VICTOR GUSTAVO DE LIMA CARVALHO", "CARLOS EDUARDO FURTADO SOUSA"],
             "Manipulação FLV": ["CRISLANE DA SILVA PEREIRA", "EDIANA SOUZA SANTOS", "EDUARDO GOMES DA CUNHA"],
             "Mercearia": ["MARCIO PEREIRA DE ANDRADE", "HELDER DE MORAIS SOUSA", "EDSON VIEIRA DE SOUSA", "LUIZ FELIPE FERNANDES ARAUJO", "CAROLINE MARQUES COUTO"],
             "Refeitório": ["GRACE CECILIA MATOS COSTA", "EDILSA SANTOS MATOS", "ROSALIA PEREIRA DA SILVA", "MARIA VALDENI DA SILVA"],
@@ -331,14 +331,13 @@
             });
         }
 
-        // Distribuição inteligente de folgas (Revezamento de domingo 1 sim 1 não)
         function generateDefaultSchedule(sectorKey, memberIndex) {
             const schedule = [];
             const isWeekendOffSector = (sectorKey === 'Depósito' || sectorKey === 'Administrativo');
             const isDelivery = sectorKey === 'Delivery';
             
             const groupA = memberIndex % 2 === 0;
-            const weekDayOff = (memberIndex % 5); // 0=Seg, 1=Ter...
+            const weekDayOff = (memberIndex % 5); 
 
             for (let i = 0; i < 28; i++) {
                 const dayOfWeek = i % 7;
@@ -347,14 +346,12 @@
                 if (isWeekendOffSector) {
                     schedule.push((dayOfWeek === 5 || dayOfWeek === 6) ? 'F' : 'T');
                 } else if (isDelivery) {
-                    // Delivery folga todo domingo, e precisa de mais 1 folga pra bater 5x2
                     if (dayOfWeek === 6 || dayOfWeek === weekDayOff) {
                         schedule.push('F');
                     } else {
                         schedule.push('T');
                     }
                 } else {
-                    // Varejo normal (Rodízio Domingo)
                     const isSunday = dayOfWeek === 6;
                     let hasSundayOffThisWeek = false;
                     
@@ -364,11 +361,9 @@
                     if (isSunday) {
                         schedule.push(hasSundayOffThisWeek ? 'F' : 'T');
                     } else {
-                        // Folga fixa na semana
                         if (dayOfWeek === weekDayOff) {
                             schedule.push('F');
                         } 
-                        // Se não folgou no domingo, ganha folga extra na semana
                         else if (!hasSundayOffThisWeek && dayOfWeek === ((weekDayOff + 2) % 6)) {
                             schedule.push('F');
                         } else {
@@ -380,25 +375,20 @@
             return schedule;
         }
 
-        // Função para formatar as horas somando minutos para garantir 42h (8h24 de jornada)
         function generateIndividualShift(name, index, totalMembers, sectorKey) {
-            // Horários padrões individualizados baseados na posição e setor
             let entry = '08:00';
             let exit = '17:30'; 
             let bStart = '12:00';
             let bEnd = '13:06';
 
-            // Exemplos de turnos variados (6:00, 8:00, 9:40, 13:40, 14:40)
             if (sectorKey === 'Operadores de Supermercado') {
                 if (index < 5) {
-                    // Manhã (Misturado)
                     if (index % 2 === 0) {
                         entry = '06:00'; exit = '15:30'; bStart = '10:00'; bEnd = '11:06';
                     } else {
                         entry = '08:00'; exit = '17:30'; bStart = '12:00'; bEnd = '13:06';
                     }
                 } else {
-                    // Tarde (Misturado)
                     if (index % 2 === 0) {
                         entry = '13:40'; exit = '23:10'; bStart = '17:00'; bEnd = '18:06';
                     } else {
@@ -415,7 +405,6 @@
                 entry = '14:40'; exit = '00:10'; bStart = '18:00'; bEnd = '19:06';
             }
             else {
-                // Padrão Geral intercalado para não gerar gargalo
                 bStart = index % 2 === 0 ? '12:00' : '13:06';
                 bEnd = index % 2 === 0 ? '13:06' : '14:12';
             }
@@ -478,7 +467,7 @@
         function formatTime(decimalTime) {
             let h = Math.floor(decimalTime);
             const m = Math.round((decimalTime - h) * 60);
-            if (h >= 24) h -= 24; // Formata madrugadas
+            if (h >= 24) h -= 24;
             return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
         }
 
@@ -491,7 +480,6 @@
                 const opacityClass = isActive ? '' : 'opacity-40 grayscale';
                 const toggleIcon = isActive ? 'ph-fill ph-eye text-brand-400' : 'ph-fill ph-eye-slash text-slate-500';
                 
-                // Trata horas da madrugada para o cálculo
                 let ex = parseTime(member.exit);
                 let en = parseTime(member.entry);
                 if (ex < en) ex += 24;
@@ -911,11 +899,9 @@
 
         let currentUser = null;
 
-        // Adicionando um observador para garantir que a gravação não falhe
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
-                // Só carrega o setor após o Firebase confirmar a autenticação silenciosa
                 safeLoadSector('Operadores de Supermercado');
             } else {
                 signInAnonymously(auth).catch(error => {
