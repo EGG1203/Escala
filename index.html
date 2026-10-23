@@ -497,15 +497,7 @@
                 const opacityClass = isActive ? '' : 'opacity-40 grayscale';
                 const toggleIcon = isActive ? 'ph-fill ph-eye text-brand-400' : 'ph-fill ph-eye-slash text-slate-500';
                 
-                let ex = parseTime(member.exit);
-                let en = parseTime(member.entry);
-                if (ex < en) ex += 24;
-
-                let be = parseTime(member.breakEnd);
-                let bs = parseTime(member.breakStart);
-                if (be < bs) be += 24;
-
-                const workTime = (ex - en) - (be - bs);
+                const workTime = (parseTime(member.exit) - parseTime(member.entry)) - (parseTime(member.breakEnd) - parseTime(member.breakStart));
                 let overtimeWarning = '';
                 if (isActive && workTime > 8.41) {
                     overtimeWarning = `<i class="ph-fill ph-warning-circle text-rose-500 text-lg animate-pulse" title="Alerta: Jornada passa de 8h24m diárias"></i>`;
@@ -535,19 +527,19 @@
                     <div class="grid grid-cols-2 gap-3 text-xs">
                         <div>
                             <label class="block text-[9px] uppercase font-bold text-slate-500 mb-1 ml-1">Entrada</label>
-                            <input type="time" value="${member.entry}" onchange="updateMember(${index}, 'entry', this.value)" ${!isActive ? 'disabled' : ''} class="w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 px-2 font-semibold text-slate-200 focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-inner">
+                            <input type="time" id="entry-${index}" value="${member.entry}" onchange="updateMember(${index}, 'entry', this.value)" ${!isActive ? 'disabled' : ''} class="w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 px-2 font-semibold text-slate-200 focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-inner">
                         </div>
                         <div>
                             <label class="block text-[9px] uppercase font-bold text-slate-500 mb-1 ml-1">Saída</label>
-                            <input type="time" value="${member.exit}" onchange="updateMember(${index}, 'exit', this.value)" ${!isActive ? 'disabled' : ''} class="w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 px-2 font-semibold text-slate-200 focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-inner">
+                            <input type="time" id="exit-${index}" value="${member.exit}" onchange="updateMember(${index}, 'exit', this.value)" ${!isActive ? 'disabled' : ''} class="w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 px-2 font-semibold text-slate-200 focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-inner">
                         </div>
                         <div>
                             <label class="block text-[9px] uppercase font-bold text-amber-500/80 mb-1 ml-1">Ida Almoço</label>
-                            <input type="time" value="${member.breakStart}" onchange="updateMember(${index}, 'breakStart', this.value)" ${!isActive ? 'disabled' : ''} class="w-full bg-slate-950 border border-amber-500/30 rounded-lg py-1.5 px-2 font-semibold text-slate-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all shadow-inner">
+                            <input type="time" id="breakStart-${index}" value="${member.breakStart}" onchange="updateMember(${index}, 'breakStart', this.value)" ${!isActive ? 'disabled' : ''} class="w-full bg-slate-950 border border-amber-500/30 rounded-lg py-1.5 px-2 font-semibold text-slate-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all shadow-inner">
                         </div>
                         <div>
                             <label class="block text-[9px] uppercase font-bold text-amber-500/80 mb-1 ml-1">Volta Almoço</label>
-                            <input type="time" value="${member.breakEnd}" onchange="updateMember(${index}, 'breakEnd', this.value)" ${!isActive ? 'disabled' : ''} class="w-full bg-slate-950 border border-amber-500/30 rounded-lg py-1.5 px-2 font-semibold text-slate-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all shadow-inner">
+                            <input type="time" id="breakEnd-${index}" value="${member.breakEnd}" onchange="updateMember(${index}, 'breakEnd', this.value)" ${!isActive ? 'disabled' : ''} class="w-full bg-slate-950 border border-amber-500/30 rounded-lg py-1.5 px-2 font-semibold text-slate-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all shadow-inner">
                         </div>
                     </div>
                 `;
@@ -557,7 +549,36 @@
 
         window.updateMember = function(index, field, value) {
             team[index][field] = value;
-            updateAll(true); 
+            
+            // Inteligência: Auto-preenchimento
+            if (field === 'entry' && value) {
+                let en = parseTime(value);
+                let bs = parseTime(team[index].breakStart);
+                let be = parseTime(team[index].breakEnd);
+                let breakDur = be - bs;
+                if (breakDur < 0) breakDur += 24;
+                
+                let ex = en + 8.4 + breakDur; // 8h24m trab + duração atual do intervalo
+                if (ex >= 24) ex -= 24;
+                team[index].exit = formatTime(ex);
+                document.getElementById(`exit-${index}`).value = team[index].exit;
+            } 
+            else if (field === 'breakStart' && value) {
+                let bs = parseTime(value);
+                let be = bs + 1.1; // 1h06m de almoço automático
+                if (be >= 24) be -= 24;
+                team[index].breakEnd = formatTime(be);
+                document.getElementById(`breakEnd-${index}`).value = team[index].breakEnd;
+                
+                let en = parseTime(team[index].entry);
+                let ex = en + 8.4 + 1.1; // 8h24m trab + 1h06m intervalo automático
+                if (ex >= 24) ex -= 24;
+                team[index].exit = formatTime(ex);
+                document.getElementById(`exit-${index}`).value = team[index].exit;
+            }
+
+            // Atualiza gráficos mas NÃO recarrega o formulário (false) para não perder o foco de digitação
+            updateAll(false); 
         }
 
         window.toggleActive = function(index) {
