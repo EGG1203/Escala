@@ -919,7 +919,39 @@
             }
         }
 
-        window.saveCurrentSector = async function() {
+        window.saveCurrentSector = function() {
+            const modal = document.getElementById('password-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('password-modal-content').classList.remove('scale-95');
+                document.getElementById('admin-password').focus();
+            }, 10);
+        };
+
+        window.closePasswordModal = function() {
+            const modal = document.getElementById('password-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('password-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('admin-password').value = '';
+            }, 300);
+        };
+
+        window.confirmPassword = function() {
+            const pass = document.getElementById('admin-password').value;
+            if (pass === '506') {
+                closePasswordModal();
+                executeSave();
+            } else {
+                showToast('Senha incorreta!', 'error');
+                document.getElementById('admin-password').value = '';
+                document.getElementById('admin-password').focus();
+            }
+        };
+
+        async function executeSave() {
             if (!currentUser || !window.currentSectorKey) {
                 showToast("Aguarde a conexão com o banco...", 'error');
                 return;
@@ -947,7 +979,7 @@
                 showToast("Erro ao tentar salvar no banco de dados.", 'error');
                 btn.innerHTML = originalHtml;
             }
-        };
+        }
 
         window.fetchSectorData = async function(sectorKey) {
             if (!currentUser) return null;
