@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel 5x2 - Dona Hortifruti</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' },
+                        darkpanel: 'rgba(15, 23, 42, 0.6)',
+                    },
+                    animation: { 'fade-in-down': 'fadeInDown 0.2s ease-out forwards' },
+                    keyframes: {
+                        fadeInDown: {
+                            '0%': { opacity: '0', transform: 'translateY(-10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #020617; 
+            color: #e2e8f0; 
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(20, 184, 166, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+        input[type="time"] { color-scheme: dark; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        .glass-panel {
+            background: var(--tw-colors-darkpanel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(51, 65, 85, 0.5); 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+        .glow-hover:hover {
+            box-shadow: 0 0 20px rgba(20, 184, 166, 0.2);
+            border-color: rgba(20, 184, 166, 0.4);
+        }
+        .striped-bg {
+            background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05) 10px, rgba(255, 255, 255, 0) 10px, rgba(255, 255, 255, 0) 20px);
+        }
+
+        .cell-t { background-color: rgba(30, 41, 59, 0.8); color: #94a3b8; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .cell-t:hover { background-color: rgba(51, 65, 85, 0.8); color: #f8fafc; }
+        .cell-f { background-color: rgba(244, 63, 94, 0.15); color: #fb7185; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .cell-f:hover { background-color: rgba(244, 63, 94, 0.25); }
+    </style>
+</head>
+<body class="antialiased min-h-screen p-4 md:p-8 font-sans selection:bg-brand-500 selection:text-white pb-20">
+
+    <div class="max-w-[1400px] mx-auto space-y-6">
+        
+        <!-- Header & Sector Selector -->
+        <header class="flex flex-col xl:flex-row justify-between items-start xl:items-center pb-6 border-b border-slate-800 gap-6">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+                    <div class="p-2.5 bg-gradient-to-br from-brand-400 to-brand-600 rounded-xl text-white shadow-[0_0_20px_rgba(20,184,166,0.3)]">
+                        <i class="ph-fill ph-buildings"></i>
+                    </div>
+                    Painel 5x2 <span class="font-light text-slate-500 text-2xl hidden md:inline">| Dona Hortifruti e Adega</span>
+                </h1>
+                <p class="text-slate-400 mt-2 text-sm">Simulador logístico de cobertura, horários individualizados e equipe.</p>
+            </div>
+
+            <!-- Sector Dropdown -->
+            <div class="w-full xl:w-[350px] relative" id="sector-container">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 ml-1">Selecione o Setor</label>
+                <button type="button" onclick="toggleSectorDropdown()" id="sector-btn" class="w-full flex justify-between items-center bg-slate-900 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 hover:border-brand-500 hover:bg-slate-800 transition-all outline-none focus:ring-2 focus:ring-brand-500/50 shadow-lg">
+                    <div class="flex items-center gap-3 truncate">
+                        <i class="ph-fill ph-users-three text-brand-400"></i>
+                        <span id="sector-selected-text" class="font-medium truncate">Carregando...</span>
+                    </div>
+                    <i class="ph ph-caret-down text-slate-400 transition-transform duration-200" id="sector-icon"></i>
+                </button>
+
+                <div id="sector-menu" class="hidden absolute right-0 top-full mt-2 w-full bg-slate-900 border border-slate-700 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-50 overflow-hidden max-h-[400px] overflow-y-auto">
+                    <div class="p-2 flex flex-col gap-1 text-sm" id="sector-list">
+                        <!-- JS Injected -->
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-panel rounded-2xl p-5 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700 text-blue-400 flex items-center justify-center text-2xl">
+                    <i class="ph-fill ph-users"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tamanho da Equipe</p>
+                    <h3 class="text-2xl font-bold text-white mt-0.5" id="team-size">0</h3>
+                </div>
+            </div>
+            
+            <div class="glass-panel rounded-2xl p-5 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700 text-brand-400 flex items-center justify-center text-2xl">
+                    <i class="ph-fill ph-clock"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Jornada Média da Equipe</p>
+                    <h3 class="text-2xl font-bold text-white mt-0.5" id="jornada-media">0h 00m</h3>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-5 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700 text-purple-400 flex items-center justify-center text-2xl">
+                    <i class="ph-fill ph-coffee"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Regra de Intervalo</p>
+                    <h3 class="text-lg font-bold text-white mt-1 leading-tight">1h 06m</h3>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-5 flex items-center gap-4 relative overflow-hidden group">
+                <div class="w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700 text-emerald-400 flex items-center justify-center text-2xl transition-colors" id="status-icon-container">
+                    <i class="ph-fill ph-check-circle" id="status-icon"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status de Cobertura</p>
+                    <h3 class="text-sm font-bold text-emerald-400 mt-1 leading-tight" id="status-text">Ideal (>75% operando)</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+            
+            <!-- Equipe Settings -->
+            <div class="lg:col-span-4 glass-panel rounded-3xl overflow-hidden flex flex-col glow-hover transition-all duration-300">
+                <div class="p-5 border-b border-slate-700/50 bg-slate-800/30 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="ph-fill ph-sliders-horizontal text-brand-400"></i> Ajuste de Escala
+                    </h2>
+                    <div class="flex gap-2">
+                        <button onclick="saveCurrentSector()" id="btn-save" class="text-xs font-bold text-white transition-colors flex items-center gap-1 bg-brand-600 hover:bg-brand-500 px-3 py-1.5 rounded-lg shadow-lg shadow-brand-500/20">
+                            <i class="ph-bold ph-floppy-disk"></i> Salvar
+                        </button>
+                        <button onclick="resetCurrentSector()" class="text-xs font-bold text-brand-400 hover:text-brand-300 transition-colors flex items-center gap-1 bg-brand-900/30 px-3 py-1.5 rounded-lg border border-brand-500/20">
+                            <i class="ph-bold ph-arrow-counter-clockwise"></i> Resetar
+                        </button>
+                    </div>
+                </div>
+                <div class="p-5 flex-1 space-y-4 overflow-y-auto max-h-[700px] pr-3" id="team-container">
+                    <!-- JS Injected -->
+                </div>
+            </div>
+
+            <!-- Heatmap / Cobertura -->
+            <div class="lg:col-span-8 glass-panel rounded-3xl overflow-hidden flex flex-col glow-hover transition-all duration-300">
+                <div class="p-5 border-b border-slate-700/50 bg-slate-800/30 flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="ph-fill ph-chart-bar text-brand-400"></i> Mapa de Cobertura Diário
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Linha do tempo gerada com base nos turnos (blocos de 30 min)</p>
+                    </div>
+                    <!-- Legend -->
+                    <div class="grid grid-cols-2 md:flex items-center gap-4 text-[10px] font-bold text-slate-300 bg-slate-900/80 px-4 py-2.5 rounded-xl border border-slate-700">
+                        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span> 75-100% da eq.</div>
+                        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> 50-75% da eq.</div>
+                        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> 25-50% da eq.</div>
+                        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> < 25% da eq.</div>
+                    </div>
+                </div>
+                
+                <div class="p-6 overflow-x-auto">
+                    <!-- Aggregated Timeline -->
+                    <div class="min-w-[700px]">
+                        <h3 class="text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-wider flex items-center justify-between">
+                            <span>Pessoas ativas no setor</span>
+                            <span class="text-brand-400 font-normal normal-case">*Não contabiliza afastados/folguistas</span>
+                        </h3>
+                        
+                        <div class="relative w-full bg-slate-900/80 border border-slate-700 rounded-xl h-12 flex overflow-hidden shadow-inner mb-2" id="aggregated-timeline">
+                            <!-- JS Injected blocks -->
+                        </div>
+                        
+                        <div class="relative w-full h-6 text-[9px] font-bold text-slate-500" id="time-labels">
+                            <!-- JS Injected labels -->
+                        </div>
+                    </div>
+
+                    <!-- Individual Timelines -->
+                    <div class="mt-8 min-w-[700px]">
+                         <h3 class="text-[10px] font-bold text-slate-400 mb-4 uppercase tracking-wider">Visão Individual</h3>
+                         <div id="employee-bars" class="space-y-2">
+                             <!-- JS Injected bars -->
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grade de Escala (Calendário Mensal) -->
+        <div class="glass-panel rounded-3xl overflow-hidden flex flex-col glow-hover transition-all duration-300 mt-6">
+            <div class="p-5 border-b border-slate-700/50 bg-slate-800/30 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="ph-fill ph-calendar-blank text-brand-400"></i> Planejamento de Folgas (4 Semanas)
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Algoritmo inteligente 5x2 ativo: Garante folga obrigatória no domingo via rodízio.</p>
+                </div>
+                <div class="flex items-center gap-4 text-[10px] font-bold text-slate-300 bg-slate-900/80 px-4 py-2.5 rounded-xl border border-slate-700">
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-slate-700 border border-slate-600"></span> Trabalha</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-500/20 border border-rose-500/30"></span> Folga</div>
+                </div>
+            </div>
+            
+            <div class="p-6 overflow-x-auto">
+                <div class="min-w-[1000px]">
+                    <table class="w-full text-center border-collapse text-xs">
+                        <thead id="calendar-head">
+                            <!-- Injetado via JS -->
+                        </thead>
+                        <tbody id="calendar-body">
+                            <!-- Injetado via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-2xl transition-opacity duration-300 opacity-0 pointer-events-none z-50 font-bold flex items-center gap-3 transform translate-y-4">
+        <i class="ph-fill ph-check-circle text-2xl" id="toast-icon"></i>
+        <span id="toast-msg">Mensagem</span>
+    </div>
+
+    <script>
+        // Dados de setores integrados e prontos para diversidade de horários
+        const sectorsData = {
+            "Operadores de Supermercado": ["JACIENE MEDEIROS DOS SANTOS", "TAMIRES LEAL RAMOS", "KESSIA LUANA SANTOS FIGUEREDO", "SOFIA GOMES DE OLIVEIRA", "MARISTELLA FERNANDA ALVES MELO", "PEDRO HENRIQUE MARQUES ANDRADE", "LYDIA LUIZA ARAUJO PEREIRA", "ELAINE ALVES SANTOS DA SILVA", "ISABELA DOS REIS CARVALHO", "FABIANA DA SILVA BATISTA"],
+            "Atendente de Cadastro": ["CYNTHIA LUANA XAVIER DA SILVA"],
+            "Fiscal de Caixa": ["VALDELICE ARAUJO", "JAQUELINE DOUETS DA SILVA", "FERNANDO MONTANDON CARVALHO"],
+            "Empacotador": ["MARCUS PAULO COSTA RIBERIO"],
+            "Adega": ["ALINE DE SOUSA PIMENTA", "BIANCA RABELO ALVES", "MURILO SIQUEIRA LIMA", "MICHELE DA SILVA DE JESUS"],
+            "Açougue": ["LEACIR MORENO DA SILVA", "ROSELI DA PAZ FREIRE", "ROGERIO XAVIER DA SILVA", "WESLEY CAVALCANTE SILVA", "MARCIO ALEXANDRE RODRIGUES", "ALAN HENRIQUE COSTA DA SILVA"],
+            "Manipulação Açougue": ["DAIANE SILVA", "ERIELMA REIS PINHEIRO", "GREICIELE RODRIGUES DOS SANTOS", "DAVID CAIO SILVA RODRIGUES"],
+            "Padaria": ["RAQUEL SILVA DE OLIVEIRA", "ALLAN DE SOUSA SANTOS", "CYNTHIA HELENA ARIUTE", "ANA LAURA DOS SANTOS RODRIGUES", "VITOR GABRIEL GALVAO SILVA"],
+            "Pizzaria": ["ALESSA DA SILVA", "LUCIANA CRISTINA VIEIRA", "JOYCY KELLY NASCIMENTO DA CRUZ"],
+            "P.A.S": ["CARLENE FERREIRA", "WEVERTON RIBEIRO DOS SANTOS", "FELIX JOTHAN SOARES SANTANA", "ELMA DO CARMO RIBEIRO"],
+            "Sushi": ["DIEGO NERY PEREIRA", "WALAFE HENRIQUE DE SOUSA PIMENTA", "VICTOR GUSTAVO DE LIMA CARVALHO", "CARLOS EDUARDO FURTADO SOUSA"],
+            "Manipulação FLV": ["CRISLANE DA SILVA PEREIRA", "EDIANA SOUZA SANTOS", "EDUARDO GOMES DA CUNHA"],
+            "Mercearia": ["MARCIO PEREIRA DE ANDRADE", "HELDER DE MORAIS SOUSA", "EDSON VIEIRA DE SOUSA", "LUIZ FELIPE FERNANDES ARAUJO", "CAROLINE MARQUES COUTO"],
+            "Refeitório": ["GRACE CECILIA MATOS COSTA", "EDILSA SANTOS MATOS", "ROSALIA PEREIRA DA SILVA", "MARIA VALDENI DA SILVA"],
+            "Conservação e Limpeza": ["CAMILA CAROLINA DA SILVA", "ERINALDA MACHADO DA SILVA", "ANA FELICIANA DA SILVA", "MARIA DO SOCORRO DE SOUZA"],
+            "Depósito": ["DEUVAIR ALVES", "GUILHERME RODRIGUES BASTOS", "EZEQUIAS ALVES DE SOUSA", "ROBSON MAURICIO DOS SANTOS"],
+            "Prevenção de Perdas": ["BARBARA APARECIDA DE ARAUJO", "RODRIGO GUEDES", "GEOVANE ALVES", "FELIPE ASSIS ARAUJO BATA", "ADRIEL BERTOLDO LIMA", "GUSTAVO DOURADO", "POLYANNA RODRIGUES", "SIDNEI SILVA"],
+            "Administrativo": ["IRIS DE CARVALHO SILVA", "KAYLAINE SOARES DE JESUS", "HALLAN BARBOSA NEVES DE SOUSA", "JOAO GABRIEL EUROPEU CARVALHO", "LUIZ PAULO MEDEIROS DA CUNHA JUNIOR", "MARCIO ANTONIO RIBEIRO"],
+            "Delivery": ["ULISSES RODRIGUES DOS SANTOS", "JACIARA MENDES FURTADO", "DEYSIANE CORREIA DE MELO", "LUANA RAFAELA DA SILVA SANTOS"]
+        };
+
+        var currentSectorKey = "";
+        var team = [];
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            document.getElementById('toast-msg').innerText = message;
+            
+            if (type === 'success') {
+                toast.className = 'fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-2xl transition-all duration-300 z-50 font-bold flex items-center gap-3 bg-emerald-500 text-white border border-emerald-400';
+                icon.className = 'ph-fill ph-check-circle text-2xl';
+            } else {
+                toast.className = 'fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-2xl transition-all duration-300 z-50 font-bold flex items-center gap-3 bg-rose-500 text-white border border-rose-400';
+                icon.className = 'ph-fill ph-warning-circle text-2xl';
+            }
+            
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+            }, 3000);
+        }
+
+        const sectorMenu = document.getElementById('sector-menu');
+        const sectorIcon = document.getElementById('sector-icon');
+        const sectorSelectedText = document.getElementById('sector-selected-text');
+        const sectorList = document.getElementById('sector-list');
+
+        function toggleSectorDropdown() {
+            sectorMenu.classList.toggle('hidden');
+            sectorMenu.classList.toggle('animate-fade-in-down');
+            sectorIcon.style.transform = sectorMenu.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+
+        document.addEventListener('click', (event) => {
+            const container = document.getElementById('sector-container');
+            if (!container.contains(event.target) && !sectorMenu.classList.contains('hidden')) {
+                toggleSectorDropdown();
+            }
+        });
+
+        function populateSectorDropdown() {
+            Object.keys(sectorsData).forEach(key => {
+                const count = sectorsData[key].length;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'w-full text-left px-4 py-2.5 rounded-lg hover:bg-slate-800 transition-colors flex justify-between items-center';
+                btn.innerHTML = `<span class="font-semibold text-slate-200">${key}</span> <span class="text-xs bg-slate-900 px-2 py-1 rounded text-slate-400">${count}</span>`;
+                btn.onclick = () => window.loadSector(key);
+                sectorList.appendChild(btn);
+            });
+        }
+
+        // Distribuição inteligente de folgas (Revezamento de domingo 1 sim 1 não)
+        function generateDefaultSchedule(sectorKey, memberIndex) {
+            const schedule = [];
+            const isWeekendOffSector = (sectorKey === 'Depósito' || sectorKey === 'Administrativo');
+            const isDelivery = sectorKey === 'Delivery';
+            
+            const groupA = memberIndex % 2 === 0;
+            const weekDayOff = (memberIndex % 5); // 0=Seg, 1=Ter...
+
+            for (let i = 0; i < 28; i++) {
+                const dayOfWeek = i % 7;
+                const weekNum = Math.floor(i / 7);
+                
+                if (isWeekendOffSector) {
+                    schedule.push((dayOfWeek === 5 || dayOfWeek === 6) ? 'F' : 'T');
+                } else if (isDelivery) {
+                    // Delivery folga todo domingo, e precisa de mais 1 folga pra bater 5x2
+                    if (dayOfWeek === 6 || dayOfWeek === weekDayOff) {
+                        schedule.push('F');
+                    } else {
+                        schedule.push('T');
+                    }
+                } else {
+                    // Varejo normal (Rodízio Domingo)
+                    const isSunday = dayOfWeek === 6;
+                    let hasSundayOffThisWeek = false;
+                    
+                    if (groupA && (weekNum === 0 || weekNum === 2)) hasSundayOffThisWeek = true;
+                    if (!groupA && (weekNum === 1 || weekNum === 3)) hasSundayOffThisWeek = true;
+
+                    if (isSunday) {
+                        schedule.push(hasSundayOffThisWeek ? 'F' : 'T');
+                    } else {
+                        // Folga fixa na semana
+                        if (dayOfWeek === weekDayOff) {
+                            schedule.push('F');
+                        } 
+                        // Se não folgou no domingo, ganha folga extra na semana
+                        else if (!hasSundayOffThisWeek && dayOfWeek === ((weekDayOff + 2) % 6)) {
+                            schedule.push('F');
+                        } else {
+                            schedule.push('T');
+                        }
+                    }
+                }
+            }
+            return schedule;
+        }
+
+        // Função para formatar as horas somando minutos para garantir 42h (8h24 de jornada)
+        function generateIndividualShift(name, index, totalMembers, sectorKey) {
+            // Horários padrões individualizados baseados na posição e setor
+            let entry = '08:00';
+            let exit = '17:30'; 
+            let bStart = '12:00';
+            let bEnd = '13:06';
+
+            // Exemplos de turnos variados (6:00, 8:00, 9:40, 13:40, 14:40)
+            if (sectorKey === 'Operadores de Supermercado') {
+                if (index < 5) {
+                    // Manhã (Misturado)
+                    if (index % 2 === 0) {
+                        entry = '06:00'; exit = '15:30'; bStart = '10:00'; bEnd = '11:06';
+                    } else {
+                        entry = '08:00'; exit = '17:30'; bStart = '12:00'; bEnd = '13:06';
+                    }
+                } else {
+                    // Tarde (Misturado)
+                    if (index % 2 === 0) {
+                        entry = '13:40'; exit = '23:10'; bStart = '17:00'; bEnd = '18:06';
+                    } else {
+                        entry = '14:40'; exit = '00:10'; bStart = '18:00'; bEnd = '19:06';
+                    }
+                }
+            } 
+            else if (sectorKey === 'Depósito') {
+                entry = '07:30'; exit = '17:00'; 
+                bStart = index % 2 === 0 ? '11:30' : '12:36';
+                bEnd = index % 2 === 0 ? '12:36' : '13:42';
+            }
+            else if (name.includes('MICHELE DA SILVA DE JESUS')) {
+                entry = '14:40'; exit = '00:10'; bStart = '18:00'; bEnd = '19:06';
+            }
+            else {
+                // Padrão Geral intercalado para não gerar gargalo
+                bStart = index % 2 === 0 ? '12:00' : '13:06';
+                bEnd = index % 2 === 0 ? '13:06' : '14:12';
+            }
+
+            return {
+                name: name,
+                entry: entry,
+                breakStart: bStart,
+                breakEnd: bEnd,
+                exit: exit,
+                active: true,
+                schedule: generateDefaultSchedule(sectorKey, index)
+            };
+        }
+
+        window.loadSector = async function(sectorKey) {
+            currentSectorKey = sectorKey;
+            sectorSelectedText.innerText = sectorKey;
+            
+            const totalMembers = sectorsData[sectorKey].length;
+            const defaultTeam = sectorsData[sectorKey].map((name, index) => 
+                generateIndividualShift(name, index, totalMembers, sectorKey)
+            );
+
+            team = defaultTeam;
+
+            if (window.fetchSectorData) {
+                const savedTeam = await window.fetchSectorData(sectorKey);
+                if (savedTeam) {
+                    team = savedTeam.map((m, idx) => ({
+                        ...m, 
+                        active: m.active !== false,
+                        schedule: m.schedule || generateDefaultSchedule(sectorKey, idx)
+                    }));
+                }
+            }
+
+            if(!sectorMenu.classList.contains('hidden')) toggleSectorDropdown();
+            
+            updateAll();
+        }
+
+        window.resetCurrentSector = function() {
+            if(currentSectorKey) {
+                const totalMembers = sectorsData[currentSectorKey].length;
+                team = sectorsData[currentSectorKey].map((name, index) => 
+                    generateIndividualShift(name, index, totalMembers, currentSectorKey)
+                );
+                updateAll();
+                showToast("Setor resetado para padrão.", 'success');
+            }
+        }
+
+        function parseTime(timeStr) {
+            if(!timeStr) return 0;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours + (minutes / 60);
+        }
+
+        function formatTime(decimalTime) {
+            let h = Math.floor(decimalTime);
+            const m = Math.round((decimalTime - h) * 60);
+            if (h >= 24) h -= 24; // Formata madrugadas
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        }
+
+        function renderForm() {
+            const container = document.getElementById('team-container');
+            container.innerHTML = '';
+
+            team.forEach((member, index) => {
+                const isActive = member.active !== false;
+                const opacityClass = isActive ? '' : 'opacity-40 grayscale';
+                const toggleIcon = isActive ? 'ph-fill ph-eye text-brand-400' : 'ph-fill ph-eye-slash text-slate-500';
+                
+                // Trata horas da madrugada para o cálculo
+                let ex = parseTime(member.exit);
+                let en = parseTime(member.entry);
+                if (ex < en) ex += 24;
+
+                let be = parseTime(member.breakEnd);
+                let bs = parseTime(member.breakStart);
+                if (be < bs) be += 24;
+
+                const workTime = (ex - en) - (be - bs);
+                let overtimeWarning = '';
+                if (isActive && workTime > 8.41) {
+                    overtimeWarning = `<i class="ph-fill ph-warning-circle text-rose-500 text-lg animate-pulse" title="Alerta: Jornada passa de 8h24m diárias"></i>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = `bg-slate-900/50 p-4 rounded-2xl border border-slate-700/50 relative overflow-hidden group transition-all ${opacityClass}`;
+                
+                card.innerHTML = `
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 opacity-0 group-hover:opacity-100 transition-opacity ${isActive ? '' : 'hidden'}"></div>
+                    
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3 truncate pr-2">
+                            <div class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-600 flex items-center justify-center text-slate-300 font-bold text-xs shadow-inner shrink-0">${index + 1}</div>
+                            <div class="font-bold text-slate-200 text-xs truncate" title="${member.name}">
+                                ${member.name} ${!isActive ? '<span class="text-[9px] text-rose-400 ml-1 font-normal uppercase">(Ausente)</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            ${overtimeWarning}
+                            <button onclick="toggleActive(${index})" class="p-1.5 rounded-md hover:bg-slate-800 transition-colors" title="${isActive ? 'Desativar/Afastar Funcionário' : 'Ativar Funcionário'}">
+                                <i class="${toggleIcon} text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label class="block text-[9px] uppercase font-bold text-slate-500 mb-1 ml-1">Entrada</label>
+                            <input type="time" value="${member.entry}" onchange="updateMember(${index}, 'entry', this.value)" ${!isActive ? 'disabled' : ''} class="w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 px-2 font-semibold text-slate-200 focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-inner">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase font-bold text-slate-500 mb-1 ml-1">Saída</label>
+                            <input type="time" value="${member.exit}" onchange="updateMember(${index}, 'exit', this.value)" ${!isActive ? 'disabled' : ''} class="w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 px-2 font-semibold text-slate-200 focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-inner">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase font-bold text-amber-500/80 mb-1 ml-1">Ida Almoço</label>
+                            <input type="time" value="${member.breakStart}" onchange="updateMember(${index}, 'breakStart', this.value)" ${!isActive ? 'disabled' : ''} class="w-full bg-slate-950 border border-amber-500/30 rounded-lg py-1.5 px-2 font-semibold text-slate-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all shadow-inner">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase font-bold text-amber-500/80 mb-1 ml-1">Volta Almoço</label>
+                            <input type="time" value="${member.breakEnd}" onchange="updateMember(${index}, 'breakEnd', this.value)" ${!isActive ? 'disabled' : ''} class="w-full bg-slate-950 border border-amber-500/30 rounded-lg py-1.5 px-2 font-semibold text-slate-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all shadow-inner">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.updateMember = function(index, field, value) {
+            team[index][field] = value;
+            updateAll(true); 
+        }
+
+        window.toggleActive = function(index) {
+            team[index].active = team[index].active === false ? true : false;
+            updateAll(true);
+        }
+
+        function calculateStats() {
+            if(team.length === 0) return;
+            let totalHours = 0;
+            let activeCount = 0;
+            
+            team.forEach(m => {
+                if (m.active === false) return; 
+                
+                let ex = parseTime(m.exit);
+                let en = parseTime(m.entry);
+                if (ex < en) ex += 24;
+
+                let be = parseTime(m.breakEnd);
+                let bs = parseTime(m.breakStart);
+                if (be < bs) be += 24;
+
+                const work = (ex - en) - (be - bs);
+                totalHours += work * 5;
+                activeCount++;
+            });
+
+            document.getElementById('team-size').innerHTML = `${activeCount} <span class="text-sm font-normal text-slate-500">/ ${team.length} ativos</span>`;
+
+            if (activeCount === 0) {
+                document.getElementById('jornada-media').innerHTML = `<span class="text-slate-500">-</span>`;
+                return;
+            }
+
+            const avg = totalHours / activeCount;
+            const h = Math.floor(avg);
+            const min = Math.round((avg - h) * 60);
+            
+            const isOverTime = h > 42 || (h === 42 && min > 0);
+            const colorClass = isOverTime ? 'text-rose-400' : 'text-white';
+            
+            document.getElementById('jornada-media').innerHTML = `<span class="${colorClass}">${h}h ${min.toString().padStart(2, '0')}m</span>`;
+        }
+
+        function renderCoverageMap() {
+            const aggContainer = document.getElementById('aggregated-timeline');
+            const labelsContainer = document.getElementById('time-labels');
+            const barsContainer = document.getElementById('employee-bars');
+            
+            aggContainer.innerHTML = '';
+            labelsContainer.innerHTML = '';
+            barsContainer.innerHTML = '';
+
+            if (team.length === 0) return;
+
+            let tStart = 24;
+            let tEnd = 0;
+            let activeCount = 0;
+
+            team.forEach(m => {
+                if (m.active === false) return; 
+                activeCount++;
+                const en = parseTime(m.entry);
+                let ex = parseTime(m.exit);
+                if (ex < en) ex += 24;
+
+                if (en < tStart) tStart = en;
+                if (ex > tEnd) tEnd = ex;
+            });
+
+            if (activeCount === 0) {
+                aggContainer.innerHTML = '<div class="flex w-full items-center justify-center text-slate-500 text-xs">Todos os funcionários afastados.</div>';
+                updateStatus(0);
+                generateIndividualBars(7, 18, 11); 
+                return;
+            }
+
+            tStart = Math.max(0, Math.floor(tStart) - 1); 
+            tEnd = Math.ceil(tEnd) + 1;
+
+            const totalDuration = tEnd - tStart; 
+            const totalBlocks = totalDuration * 2; 
+            let worstPercent = 100;
+
+            for (let i = 0; i < totalBlocks; i++) {
+                const blockStart = tStart + (i * 0.5);
+                
+                let minActiveInBlock = 99;
+                let isBlockActive = false;
+
+                for(let m = 0; m < 30; m++) {
+                    const time = blockStart + (m/60);
+                    const timeInDay = time % 24;
+                    let activeNow = 0;
+                    let someoneWorking = false;
+                    
+                    team.forEach(member => {
+                        if (member.active === false) return;
+                        
+                        const en = parseTime(member.entry);
+                        let ex = parseTime(member.exit);
+                        if (ex < en) ex += 24;
+
+                        let bs = parseTime(member.breakStart);
+                        let be = parseTime(member.breakEnd);
+                        if (be < bs) be += 24;
+
+                        if (time >= en && time < ex) {
+                            someoneWorking = true;
+                            if (!(time >= bs && time < be)) {
+                                activeNow++;
+                            }
+                        }
+                    });
+
+                    if(someoneWorking) {
+                        isBlockActive = true;
+                        if (activeNow < minActiveInBlock) minActiveInBlock = activeNow;
+                    }
+                }
+
+                if(!isBlockActive) minActiveInBlock = 0;
+
+                const percentActive = activeCount > 0 && isBlockActive ? (minActiveInBlock / activeCount) * 100 : 100;
+                if (isBlockActive && percentActive < worstPercent) worstPercent = percentActive;
+
+                const widthPct = (0.5 / totalDuration) * 100;
+                const leftPct = ((blockStart - tStart) / totalDuration) * 100;
+
+                const blockDiv = document.createElement('div');
+                blockDiv.className = 'absolute h-full flex items-center justify-center border-r border-slate-900 transition-colors duration-300 text-xs font-bold';
+                blockDiv.style.width = `${widthPct}%`;
+                blockDiv.style.left = `${leftPct}%`;
+
+                if (!isBlockActive) {
+                    blockDiv.classList.add('bg-slate-900', 'text-slate-800'); 
+                    blockDiv.innerHTML = '-';
+                } else if (percentActive >= 75) {
+                    blockDiv.classList.add('bg-brand-500/90', 'text-white');
+                    blockDiv.innerHTML = minActiveInBlock;
+                } else if (percentActive >= 50) {
+                    blockDiv.classList.add('bg-blue-500/90', 'text-white');
+                    blockDiv.innerHTML = minActiveInBlock;
+                } else if (percentActive >= 25) {
+                    blockDiv.classList.add('bg-amber-500/90', 'text-amber-950');
+                    blockDiv.innerHTML = minActiveInBlock;
+                } else {
+                    blockDiv.classList.add('bg-rose-500/90', 'text-white');
+                    blockDiv.innerHTML = minActiveInBlock;
+                }
+
+                aggContainer.appendChild(blockDiv);
+
+                if (i % 2 === 0) {
+                    const label = document.createElement('div');
+                    label.className = 'absolute -translate-x-1/2 mt-1';
+                    label.style.left = `${leftPct}%`;
+                    label.innerText = formatTime(blockStart);
+                    labelsContainer.appendChild(label);
+                }
+            }
+            
+            const endLabel = document.createElement('div');
+            endLabel.className = 'absolute -translate-x-1/2 mt-1';
+            endLabel.style.left = `100%`;
+            endLabel.innerText = formatTime(tEnd);
+            labelsContainer.appendChild(endLabel);
+
+            updateStatus(worstPercent);
+            generateIndividualBars(tStart, tEnd, totalDuration);
+        }
+
+        function updateStatus(worstPercent) {
+            const statusText = document.getElementById('status-text');
+            const statusIcon = document.getElementById('status-icon');
+            const statusContainer = document.getElementById('status-icon-container');
+            
+            if (worstPercent < 25) {
+                statusText.innerText = 'Crítico: < 25% operando';
+                statusText.className = 'text-sm font-bold text-rose-400 mt-1 leading-tight';
+                statusIcon.className = 'ph-fill ph-warning-circle';
+                statusContainer.className = 'w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700 text-rose-400 flex items-center justify-center text-2xl shadow-lg shadow-rose-500/20';
+            } else if (worstPercent < 50) {
+                statusText.innerText = 'Atenção: Menos de 50% operando';
+                statusText.className = 'text-sm font-bold text-rose-400 mt-1 leading-tight';
+                statusIcon.className = 'ph-fill ph-warning-circle';
+                statusContainer.className = 'w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700 text-rose-400 flex items-center justify-center text-2xl shadow-lg shadow-rose-500/20';
+            } else {
+                statusText.innerText = 'Ideal (>50% operando)';
+                statusText.className = 'text-sm font-bold text-emerald-400 mt-1 leading-tight';
+                statusIcon.className = 'ph-fill ph-check-circle';
+                statusContainer.className = 'w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700 text-emerald-400 flex items-center justify-center text-2xl shadow-lg shadow-emerald-500/20';
+            }
+        }
+
+        function generateIndividualBars(tStart, tEnd, totalDuration) {
+            const barsContainer = document.getElementById('employee-bars');
+            
+            team.forEach(member => {
+                const wrapper = document.createElement('div');
+                const isInactive = member.active === false;
+                wrapper.className = `flex items-center gap-3 p-2 rounded-xl border transition-all ${isInactive ? 'bg-slate-900/30 border-slate-800/30 opacity-70' : 'bg-slate-900/60 border-slate-700/50'}`;
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = `w-36 text-[10px] font-bold truncate uppercase ${isInactive ? 'text-slate-600 line-through' : 'text-slate-300'}`;
+                nameDiv.innerText = member.name;
+                nameDiv.title = member.name;
+                
+                const barContainer = document.createElement('div');
+                barContainer.className = 'flex-1 h-5 bg-slate-950 rounded-lg relative overflow-hidden border border-slate-800';
+
+                if (isInactive) {
+                    barContainer.innerHTML = `<div class="absolute h-full w-full striped-bg flex items-center justify-center text-[9px] text-slate-500 font-bold uppercase tracking-widest">Afastado / Folga</div>`;
+                } else {
+                    const en = parseTime(member.entry);
+                    let ex = parseTime(member.exit);
+                    if (ex < en) ex += 24;
+
+                    let bs = parseTime(member.breakStart);
+                    let be = parseTime(member.breakEnd);
+                    if (be < bs) be += 24;
+
+                    if (en >= tStart && ex <= tEnd) {
+                        const w1 = ((bs - en) / totalDuration) * 100;
+                        const l1 = ((en - tStart) / totalDuration) * 100;
+                        if(w1 > 0) barContainer.innerHTML += `<div class="absolute h-full bg-brand-500 rounded-l-lg flex items-center pl-2 text-[9px] text-white font-bold" style="width:${w1}%; left:${l1}%;">${formatTime(en)}</div>`;
+                        
+                        const wb = ((be - bs) / totalDuration) * 100;
+                        const lb = ((bs - tStart) / totalDuration) * 100;
+                        const stripeBg = 'background-image: repeating-linear-gradient(45deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.2) 8px, rgba(245, 158, 11, 0.4) 8px, rgba(245, 158, 11, 0.4) 16px);';
+                        if(wb > 0) barContainer.innerHTML += `<div class="absolute h-full flex items-center justify-center text-amber-300 border-x border-amber-500/50" style="${stripeBg} width:${wb}%; left:${lb}%;"><i class="ph-fill ph-coffee drop-shadow-md"></i></div>`;
+                        
+                        const w2 = ((ex - be) / totalDuration) * 100;
+                        const l2 = ((be - tStart) / totalDuration) * 100;
+                        if(w2 > 0) barContainer.innerHTML += `<div class="absolute h-full bg-brand-500 rounded-r-lg flex items-center justify-end pr-2 text-[9px] text-white font-bold" style="width:${w2}%; left:${l2}%;">${formatTime(ex)}</div>`;
+                    }
+                }
+
+                wrapper.appendChild(nameDiv);
+                wrapper.appendChild(barContainer);
+                barsContainer.appendChild(wrapper);
+            });
+        }
+        
+        function renderCalendar() {
+            const head = document.getElementById('calendar-head');
+            const body = document.getElementById('calendar-body');
+            head.innerHTML = '';
+            body.innerHTML = '';
+
+            if (team.length === 0) return;
+
+            const daysOfWeek = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+            let tr1 = '<tr class="border-b border-slate-700/50"><th class="w-32"></th>';
+            for (let w = 1; w <= 4; w++) {
+                tr1 += `<th colspan="7" class="py-2 text-slate-300 font-bold border-l border-slate-700">Semana ${w}</th>`;
+            }
+            tr1 += `<th class="border-l border-slate-700 px-3">Sem 1</th><th>Sem 2</th><th>Sem 3</th><th>Sem 4</th></tr>`;
+
+            let tr2 = '<tr class="border-b border-slate-700 bg-slate-900/50"><th class="p-2 text-left text-slate-400 font-semibold sticky left-0 bg-slate-900">Nome</th>';
+            for (let i = 0; i < 28; i++) {
+                const isWeekend = (i % 7 === 5 || i % 7 === 6);
+                const borderLeft = (i % 7 === 0) ? 'border-l border-slate-700' : '';
+                tr2 += `<th class="p-1 w-6 min-w-[24px] ${borderLeft} ${isWeekend ? 'text-slate-500' : 'text-slate-400'}">${daysOfWeek[i % 7]}</th>`;
+            }
+            tr2 += `<th class="border-l border-slate-700 bg-slate-900"></th><th class="bg-slate-900"></th><th class="bg-slate-900"></th><th class="bg-slate-900"></th></tr>`;
+            
+            head.innerHTML = tr1 + tr2;
+
+            team.forEach((member, memberIdx) => {
+                const tr = document.createElement('tr');
+                tr.className = `border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors ${member.active === false ? 'opacity-40 grayscale' : ''}`;
+                
+                let rowHTML = `<td class="p-2 text-left font-semibold text-slate-300 truncate max-w-[120px] sticky left-0 bg-slate-900/90" title="${member.name}">${member.name}</td>`;
+                
+                for (let i = 0; i < 28; i++) {
+                    const borderLeft = (i % 7 === 0) ? 'border-l border-slate-700' : '';
+                    const val = member.schedule[i] || 'T'; 
+                    const cellClass = val === 'T' ? 'cell-t' : 'cell-f';
+                    rowHTML += `<td onclick="toggleDay(${memberIdx}, ${i})" class="p-1 border border-slate-800 m-0.5 rounded-sm ${borderLeft} ${cellClass}">${val}</td>`;
+                }
+
+                let ex = parseTime(member.exit);
+                let en = parseTime(member.entry);
+                if (ex < en) ex += 24;
+
+                let be = parseTime(member.breakEnd);
+                let bs = parseTime(member.breakStart);
+                if (be < bs) be += 24;
+
+                const dailyHours = (ex - en) - (be - bs);
+                
+                rowHTML += `<td class="border-l border-slate-700 font-mono text-brand-400 p-2">${calcWeekly(member, 0, dailyHours)}</td>`;
+                rowHTML += `<td class="font-mono text-brand-400 p-2">${calcWeekly(member, 1, dailyHours)}</td>`;
+                rowHTML += `<td class="font-mono text-brand-400 p-2">${calcWeekly(member, 2, dailyHours)}</td>`;
+                rowHTML += `<td class="font-mono text-brand-400 p-2">${calcWeekly(member, 3, dailyHours)}</td>`;
+
+                tr.innerHTML = rowHTML;
+                body.appendChild(tr);
+            });
+        }
+
+        function toggleDay(memberIdx, dayIdx) {
+            if (team[memberIdx].active === false) return; 
+            const current = team[memberIdx].schedule[dayIdx];
+            team[memberIdx].schedule[dayIdx] = current === 'T' ? 'F' : 'T';
+            renderCalendar(); 
+        }
+
+        function calcWeekly(member, weekNumber, dailyHoursDecimal) {
+            let tCount = 0;
+            const startIdx = weekNumber * 7;
+            for (let i = startIdx; i < startIdx + 7; i++) {
+                if (member.schedule[i] === 'T') tCount++;
+            }
+            
+            const totalWeeklyDecimal = tCount * dailyHoursDecimal;
+            const h = Math.floor(totalWeeklyDecimal);
+            const m = Math.round((totalWeeklyDecimal - h) * 60);
+            
+            if (m === 0) return `${h}h`;
+            return `${h}h${m.toString().padStart(2, '0')}`;
+        }
+        
+        function updateAll(reRenderForm = true) {
+            if(reRenderForm) renderForm();
+            calculateStats();
+            renderCoverageMap();
+            renderCalendar();
+        }
+
+        populateSectorDropdown();
+    </script>
+    
+    <!-- FIREBASE INTEGRATION -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyCTUyGCHYUjP-s0nxnPOl06TM71scs8s0k",
+          authDomain: "escala-48cd2.firebaseapp.com",
+          projectId: "escala-48cd2",
+          storageBucket: "escala-48cd2.firebasestorage.app",
+          messagingSenderId: "315558734122",
+          appId: "1:315558734122:web:7df0a6afc287de2dc61653",
+          measurementId: "G-G0MG415J16"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+
+        // Adicionando um observador para garantir que a gravação não falhe
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                // Só carrega o setor após o Firebase confirmar a autenticação silenciosa
+                safeLoadSector('Operadores de Supermercado');
+            } else {
+                signInAnonymously(auth).catch(error => {
+                    console.error("Erro no login anônimo", error);
+                    showToast("Erro ao conectar no banco. Tente novamente.", "error");
+                });
+            }
+        });
+
+        function safeLoadSector(sector) {
+            if (typeof window.loadSector === 'function') {
+                window.loadSector(sector);
+            } else {
+                setTimeout(() => safeLoadSector(sector), 100);
+            }
+        }
+
+        window.saveCurrentSector = async function() {
+            if (!currentUser || !window.currentSectorKey) {
+                showToast("Aguarde a conexão com o banco...", 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('btn-save');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="ph-fill ph-spinner-gap animate-spin"></i> Salvando...';
+            
+            try {
+                const docRef = doc(db, 'escalas_dona_hortifruti', window.currentSectorKey);
+                await setDoc(docRef, { team: window.team });
+                
+                btn.innerHTML = '<i class="ph-bold ph-check"></i> Salvo!';
+                btn.classList.replace('bg-brand-600', 'bg-emerald-600');
+                
+                showToast("Escala salva com sucesso na nuvem!", 'success');
+
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.replace('bg-emerald-600', 'bg-brand-600');
+                }, 2000);
+            } catch (error) {
+                console.error("Save error", error);
+                showToast("Erro ao tentar salvar no banco de dados.", 'error');
+                btn.innerHTML = originalHtml;
+            }
+        };
+
+        window.fetchSectorData = async function(sectorKey) {
+            if (!currentUser) return null;
+            try {
+                const docRef = doc(db, 'escalas_dona_hortifruti', sectorKey);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    return docSnap.data().team;
+                }
+            } catch (error) {
+                console.error("Fetch error", error);
+            }
+            return null;
+        };
+    </script>
+</body>
+</html>
